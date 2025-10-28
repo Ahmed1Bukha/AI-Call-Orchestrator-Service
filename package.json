@@ -6,15 +6,17 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/server.ts",
+    "dev": "nodemon --exec ts-node src/server.ts",
     "lint": "eslint 'src/**/*.ts'"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/express": "^5.0.4",
+    "@types/express": "^5.0.5",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^24.9.1",
+    "@types/pg": "^8.15.6",
     "dotenv": "^17.2.3",
     "eslint": "^9.38.0",
     "express": "^5.1.0",
@@ -28,6 +30,9 @@
   "dependencies": {
     "ioredis": "^5.8.2",
     "kafkajs": "^2.2.4",
+    "morgan": "^1.10.1",
+    "pg": "^8.16.3",
+    "pool": "^0.4.1",
     "redis": "^5.9.0",
     "zod": "^4.1.12"
   }

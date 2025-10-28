@@ -21,11 +21,12 @@ export const config = {
 
   kafka: {
     brokers: (process.env.KAFKA_BROKERS || "localhost:9092").split(","),
-    clientId: process.env.KAFKA_CLIENT_ID || "ebra-orchestrator",
+    clientId: process.env.KAFKA_CLIENT_ID || "ebra-kafka",
     groupId: process.env.KAFKA_GROUP_ID || "call-workers",
   },
 
   app: {
+    apiKey: process.env.API_KEY || "secret",
     baseUrl: process.env.BASE_URL || "http://localhost:3000",
     maxConcurrentCalls: parseInt(process.env.MAX_CONCURRENT_CALLS || "30"),
     maxRetryAttempts: parseInt(process.env.MAX_RETRY_ATTEMPTS || "3"),

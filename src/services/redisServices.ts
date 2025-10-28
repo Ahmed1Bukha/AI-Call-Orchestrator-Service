@@ -7,17 +7,22 @@ class RedisService {
   constructor() {
     this.client = new Redis(config.redis);
 
-    this.client.on("error", (err) => {
-      console.error("error with redis", err);
+    this.client.on("connect", async () => {
+      console.log("Connected to redis successfully");
+
+      // Optional: Initialize if it doesn't exist
+      const count = await this.getCurrentConcurrency();
+      console.log("Concurrent calls is ", count);
     });
 
-    this.client.on("connect", () => {
-      console.log("Connected to redis succefully");
+    this.client.on("error", (err) => {
+      console.error("error with redis", err);
     });
   }
 
   async getCurrentConcurrency(): Promise<number> {
     const count = await this.client.get("concurrent_calls");
+    console.log(count);
     return parseInt(count || "0");
   }
 
@@ -34,8 +39,14 @@ class RedisService {
   }
 
   async aquireSlot(phoneNumber: string, callId: string): Promise<void> {
-    await this.client.incr("concurrent_calls");
-    await this.client.setex(`phone_lock:${phoneNumber}`, 600, callId);
+    const count = await this.client.incr("concurrent_calls");
+    console.log("Concurrent calls is ", count);
+    const result = await this.client.setex(
+      `phone_lock:${phoneNumber}`,
+      600,
+      callId
+    );
+    console.log("Result is ", result);
   }
 
   async releaseSlot(phoneNumber: string): Promise<void> {
