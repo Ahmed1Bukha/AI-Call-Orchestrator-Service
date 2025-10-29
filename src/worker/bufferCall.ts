@@ -10,13 +10,11 @@ class BufferCall {
   private readonly MAX_BUFFER_SIZE = 10000;
 
   async addToBuffer(callId: string, phoneNumber: string): Promise<boolean> {
-    // Prevent duplicates
     if (this.buffer.has(callId)) {
       console.log(`Call ${callId} already in buffer`);
       return false;
     }
 
-    // Check buffer size
     if (this.buffer.size >= this.MAX_BUFFER_SIZE) {
       console.error(`Buffer full (${this.buffer.size} calls)`);
       return false;
@@ -44,7 +42,6 @@ class BufferCall {
       }
     }
 
-    // Sort by age (oldest first - FIFO)
     calls.sort((a, b) => a.addedAt - b.addedAt);
 
     return calls.slice(0, limit).map((c) => c.callId);

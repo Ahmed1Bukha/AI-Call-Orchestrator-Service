@@ -4,7 +4,7 @@ import { config } from "../config/config";
 import { callQueries } from "../database/queries";
 import { redisService } from "../services/redisServices";
 const router = Router();
-
+//POST /callbacks/call-status: process call status callback
 router.post("/call-status", async (req: Request, res: Response) => {
   try {
     console.log("Callback is ", req.body);

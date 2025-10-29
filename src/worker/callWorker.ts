@@ -1,8 +1,6 @@
-// callWorker.ts
 import { callQueries } from "../database/queries";
 import { queueService } from "../services/queueService";
 import { redisService } from "../services/redisServices";
-import { Call } from "../types/calls.type";
 import { randomUUID } from "crypto";
 import { config } from "../config/config";
 import { bufferCall } from "./bufferCall";
@@ -31,20 +29,15 @@ class CallWorker {
   }
 
   private async handleCall(callId: string, to: string): Promise<void> {
-    // Try to process immediately
     const processed = await this.tryProcessImmediately(callId, to);
 
     if (!processed) {
-      // Add to buffer for later processing
       const buffered = await bufferCall.addToBuffer(callId, to);
 
       if (!buffered) {
         console.error(`Failed to buffer call ${callId}`);
-        // Optionally mark as failed or let it retry
       }
     }
-
-    // DON'T THROW - let Kafka commit the offset
   }
 
   private async tryProcessImmediately(
@@ -55,7 +48,7 @@ class CallWorker {
 
     if (!canStart) {
       console.log(`No slot available for call ${callId}, will buffer`);
-      return false; // Will be buffered
+      return false;
     }
     const call = await callQueries.getById(callId);
     if (!call) {
@@ -65,27 +58,24 @@ class CallWorker {
     try {
       await redisService.aquireSlot(to, callId);
 
-      // Successfully acquired slot, process it
       await callQueries.updateExternalCallId(callId, randomUUID());
       await callQueries.updateStatus(callId, "IN_PROGRESS");
 
-      console.log(`✅ Processed call ${callId} immediately`);
+      console.log(`Processed call ${callId} immediately`);
       return true;
     } catch (error) {
       console.error(`Error processing call ${callId}:`, error);
 
-      // Release slot if we acquired it
       await redisService.releaseSlot(to);
 
-      // Handle retries
       await callQueries.incrementAttempts(callId);
 
       if (call.attempts + 1 < config.app.maxRetryAttempts) {
         await callQueries.updateStatus(call.id, "PENDING", String(error));
-        return false; // Will be buffered for retry
+        return false;
       } else {
         await callQueries.updateStatus(call.id, "FAILED", String(error));
-        return true; // Don't buffer, it's failed
+        return true;
       }
     }
   }
@@ -102,16 +92,14 @@ class CallWorker {
       const bufferSize = await bufferCall.getBufferSize();
 
       if (bufferSize === 0) {
-        return; // Nothing to process
+        return;
       }
 
       console.log(`Checking buffer (${bufferSize} calls)`);
 
-      // Get all unique phone numbers in buffer
       const phoneNumbers = await bufferCall.getAllPhoneNumbers();
 
       for (const phoneNumber of phoneNumbers) {
-        // Check how many slots available for this number
         const currentConcurrency = await redisService.getCurrentConcurrency();
 
         if (currentConcurrency >= config.app.maxConcurrentCalls) {
@@ -119,7 +107,6 @@ class CallWorker {
           continue;
         }
 
-        // Get buffered calls for this phone number (up to available slots)
         const callIds = await bufferCall.getBufferedCallsByPhone(
           phoneNumber,
           currentConcurrency
@@ -129,7 +116,6 @@ class CallWorker {
           `Processing ${callIds.length} buffered calls for ${phoneNumber}`
         );
 
-        // Process each call
         for (const callId of callIds) {
           const call = await callQueries.getById(callId);
 
@@ -153,15 +139,12 @@ class CallWorker {
           );
 
           if (processed) {
-            // Successfully processed, remove from buffer
             await bufferCall.removeFromBuffer(callId);
           }
-          // If not processed, leave in buffer for next iteration
         }
       }
 
-      // Cleanup old calls from buffer
-      const removed = await bufferCall.clearOldCalls(300000); // 5 minutes
+      const removed = await bufferCall.clearOldCalls(300000);
       if (removed) {
         console.warn(`Removed ${removed} old calls from buffer`);
       }
@@ -181,7 +164,6 @@ class CallWorker {
     await queueService.disconnect();
   }
 
-  // Monitoring method
   async getBufferStats() {
     return await bufferCall.getStats();
   }

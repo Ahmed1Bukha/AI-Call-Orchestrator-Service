@@ -24,7 +24,6 @@ export const callQueries = {
     startedAt?: Date,
     endedAt?: Date
   ): Promise<Call> {
-    // Build dynamic query based on which date fields are provided
     const updates: string[] = ["status = $1", "last_error = $2"];
     const values: any[] = [status, error || null];
     let paramIndex = 3;
@@ -41,7 +40,7 @@ export const callQueries = {
       paramIndex++;
     }
 
-    values.push(id); // Add id as the last parameter
+    values.push(id);
 
     const result = await query(
       `UPDATE calls SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`,

@@ -20,6 +20,35 @@ class QueueService {
     }
     return this.producer;
   }
+  async createTopic(topic: string): Promise<void> {
+    const admin = this.kafka.admin();
+    try {
+      await admin.connect();
+      const topics = await admin.listTopics();
+      if (!topics.includes(topic)) {
+        await admin.createTopics({
+          topics: [{ topic, numPartitions: 1, replicationFactor: 1 }],
+          waitForLeaders: true,
+        });
+
+        // Ensure metadata is stabilized before proceeding
+        for (let attempt = 0; attempt < 10; attempt++) {
+          const metadata = await admin.fetchTopicMetadata({ topics: [topic] });
+          const hasPartitions = metadata.topics.some(
+            (t) => t.name === topic && t.partitions.length > 0
+          );
+          if (hasPartitions) break;
+          await new Promise((r) => setTimeout(r, 200));
+        }
+      }
+      console.log(`Topic ${topic} created`);
+    } catch (error) {
+      console.error("Error creating topic:", error);
+      throw error;
+    } finally {
+      await admin.disconnect();
+    }
+  }
 
   async publish(topic: string, message: any): Promise<void> {
     const producer = await this.getProducer();
@@ -41,6 +70,7 @@ class QueueService {
       this.consumer = this.kafka.consumer({
         groupId: config.kafka.groupId,
       });
+      await this.createTopic(topic);
       await this.consumer.connect();
       await this.consumer.subscribe({ topic, fromBeginning: false });
 
