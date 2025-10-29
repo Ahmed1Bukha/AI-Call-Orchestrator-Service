@@ -197,13 +197,4 @@ src/
   types/                 # Zod schemas and types
 ```
 
-## Notes & Next Steps
-
-- Replace the placeholder external call flow with real provider integration
-- Harden retry/backoff policies and dead‑letter handling
-- Add authentication/authorization for client‑facing endpoints as needed
-- Introduce structured logging and tracing
-
-## License
-
 ISC
