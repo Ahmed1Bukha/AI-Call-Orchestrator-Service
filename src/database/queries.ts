@@ -20,16 +20,32 @@ export const callQueries = {
   async updateStatus(
     id: string,
     status: string,
-    error?: string
+    error?: string,
+    startedAt?: Date,
+    endedAt?: Date
   ): Promise<Call> {
+    // Build dynamic query based on which date fields are provided
+    const updates: string[] = ["status = $1", "last_error = $2"];
+    const values: any[] = [status, error || null];
+    let paramIndex = 3;
+
+    if (startedAt !== undefined) {
+      updates.push(`started_at = $${paramIndex}`);
+      values.push(startedAt);
+      paramIndex++;
+    }
+
+    if (endedAt !== undefined) {
+      updates.push(`ended_at = $${paramIndex}`);
+      values.push(endedAt);
+      paramIndex++;
+    }
+
+    values.push(id); // Add id as the last parameter
+
     const result = await query(
-      `UPDATE calls
-        SET status = $1,
-            last_error = $2,
-            ended_at = CASE WHEN $4 IN ('COMPLETED', 'FAILED') THEN NOW() ELSE ended_at END
-        WHERE id = $3
-        RETURNING *`,
-      [status, error || null, id, status]
+      `UPDATE calls SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`,
+      values
     );
     return this.mapRow(result.rows[0]);
   },
@@ -47,23 +63,6 @@ export const callQueries = {
       externalCallId: row.external_call_id,
     };
   },
-  // Fetch and lock a pending call (for worker)
-  async fetchAndLock(): Promise<Call | null> {
-    const result = await query(
-      `UPDATE calls
-       SET status = 'IN_PROGRESS', started_at = NOW()
-       WHERE id = (
-         SELECT id FROM calls
-         WHERE status = 'PENDING'
-         ORDER BY created_at
-         LIMIT 1
-         FOR UPDATE SKIP LOCKED
-       )
-       RETURNING *`
-    );
-    return result.rows[0] ? this.mapRow(result.rows[0]) : null;
-  },
-
   async listByStatus(
     status: CallStatusEnums,
     limit = 10,

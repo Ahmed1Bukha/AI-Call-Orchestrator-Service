@@ -29,7 +29,10 @@ router.post("/", async (req: Request, res: Response) => {
     const payload = CallPayloadSchema.parse(req.body);
     const call = await callQueries.create(payload);
     try {
-      await queueService.publish("calls", { callId: call.id });
+      await queueService.publish("calls", {
+        callId: call.id,
+        to: call.payload.to,
+      });
     } catch (error) {
       console.warn("Could not publish to Kafka");
     }

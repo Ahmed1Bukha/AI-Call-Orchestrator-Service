@@ -23,7 +23,13 @@ router.post("/call-status", async (req: Request, res: Response) => {
     if (!call) {
       return res.status(404).json({ error: "Call not found" });
     }
-    await callQueries.updateStatus(call.id, callback.status, undefined);
+    await callQueries.updateStatus(
+      call.id,
+      callback.status,
+      undefined,
+      undefined,
+      callback.completedAt ? new Date(callback.completedAt) : undefined
+    );
     await redisService.releaseSlot(call.payload.to);
 
     return res.status(200).json({ message: "Callback received" });

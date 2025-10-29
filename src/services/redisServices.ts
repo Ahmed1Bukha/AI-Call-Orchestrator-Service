@@ -28,7 +28,7 @@ class RedisService {
 
   async canStartCall(phoneNumber: string): Promise<boolean> {
     const currentCalls = await this.getCurrentConcurrency();
-    if (currentCalls > config.app.maxConcurrentCalls) {
+    if (currentCalls >= config.app.maxConcurrentCalls) {
       return false;
     }
     const phoneLocked = await this.client.exists(`phone_lock:${phoneNumber}`);

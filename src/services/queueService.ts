@@ -38,11 +38,14 @@ class QueueService {
     handler: (message: any) => Promise<void>
   ): Promise<void> {
     if (!this.consumer) {
-      this.consumer = this.kafka.consumer({ groupId: config.kafka.groupId });
+      this.consumer = this.kafka.consumer({
+        groupId: config.kafka.groupId,
+      });
       await this.consumer.connect();
       await this.consumer.subscribe({ topic, fromBeginning: false });
 
       await this.consumer.run({
+        autoCommit: false,
         eachMessage: async ({ topic, partition, message }) => {
           try {
             const value = JSON.parse(message.value?.toString() || "{}");

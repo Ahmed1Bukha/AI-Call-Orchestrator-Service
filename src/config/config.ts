@@ -28,7 +28,8 @@ export const config = {
   app: {
     apiKey: process.env.API_KEY || "secret",
     baseUrl: process.env.BASE_URL || "http://localhost:3000",
-    maxConcurrentCalls: parseInt(process.env.MAX_CONCURRENT_CALLS || "30"),
+    maxConcurrentCalls: parseInt(process.env.MAX_CONCURRENT_CALLS || "5"),
     maxRetryAttempts: parseInt(process.env.MAX_RETRY_ATTEMPTS || "3"),
+    bufferCheckInterval: parseInt(process.env.BUFFER_CHECK_INTERVAL || "2000"),
   },
 };
